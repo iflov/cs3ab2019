@@ -25,6 +25,7 @@ import iducs.springboot.board.exception.ResourceNotFoundException;
 import iducs.springboot.board.repository.UserRepository;
 import iducs.springboot.board.service.QuestionService;
 import iducs.springboot.board.service.UserService;
+import iducs.springboot.board.utility.HttpSessionUtils;
 
 @Controller
 @RequestMapping("/questions")
@@ -33,6 +34,9 @@ public class QuerstionController {
 	
 	@GetMapping("")
 	public String getAllUser(Model model, HttpSession session) {
+		if(HttpSessionUtils.isEmpty(session, "user")) {
+			return "redirect:/users/login-form"; // 로그인 안되어있으면 로그인창으로 
+		}//여기 빠질수도 있음!!!!!!!!!!!!!!!!
 		List<Question> questions = questionService.getQuestions();
 		model.addAttribute("questions", questions);
 		return "/questions/list"; 
@@ -41,6 +45,7 @@ public class QuerstionController {
 	@PostMapping("")
 	// public String createUser(Question question, Model model, HttpSession session) {
 	public String createUser(String title, String contents, Model model, HttpSession session) {
+		
 		User sessionUser = (User) session.getAttribute("user");
 		Question newQuestion = new Question(title, sessionUser, contents);		
 		// Question newQuestion = new Question(question.getTitle(), writer, question.getContents());	
@@ -48,9 +53,15 @@ public class QuerstionController {
 		return "redirect:/questions"; // get 방식으로  리다이렉션 - Controller를 통해 접근
 	}
 	
-	@GetMapping("/{id}")
-	public String getQuestionById(@PathVariable(value = "id") Long id, Model model) {
+	@GetMapping("/{id}") //info page로 가는것
+	public String getQuestionById(@PathVariable(value = "id") Long id, Model model, HttpSession session) {
+		if(HttpSessionUtils.isEmpty(session, "user")) {
+			return "redirect:/users/login-form";
+		}
 		Question question = questionService.getQuestionById(id);
+		if(HttpSessionUtils.isSameUser((User)session.getAttribute("user"), question.getWriter())) {
+			model.addAttribute("same", question.getWriter());
+		}
 		model.addAttribute("question", question);
 		return "/questions/info";
 	}
